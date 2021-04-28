@@ -1,7 +1,8 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#define FULLSCREEN
+//#define FULLSCREEN
+// #define DISPLAY_WIREFRAME
 
 #ifdef FULLSCREEN
 static int windowWidth = 2560;
@@ -80,13 +81,17 @@ int main()
 	// Set the view port to be the entire window and register the callback to handle resizeing
 	glViewport(0, 0, windowWidth, windowHeight);
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
-
-	// xyz coordinates for a triangle
-	float vertices[] =
-	{
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f,  0.5f, 0.0f
+	
+	
+	float vertices[] = { 
+		0.5f, 0.5f, 0.0f,	// top right
+		0.5f, -0.5f, 0.0f,	// bottom right
+		-0.5f, -0.5f, 0.0f,	// bottom left
+		-0.5f,  0.5f, 0.0f	// top left 
+	};
+	unsigned int indices[] = {  // note that we start from 0!
+		0, 1, 3,   // first triangle
+		1, 2, 3    // second triangle
 	};
 
 	// VBO = Vertex Buffer Object -> verticies we want to store in the GPU's memory
@@ -99,9 +104,12 @@ int main()
 
 	// VAO = Vertex Array Object -> Once bound any subsquent vertex attribute calls from that point will be stored inside the VAO
 	//		which makes is simple to switch objects (just switch VAO)
-
 	unsigned int VAO;
 	glGenVertexArrays(1, &VAO);
+
+	// EBO = Element Array Object -> Stores indincies which OpenGL uses to decide what verticies to draw
+	unsigned int EBO;
+	glGenBuffers(1, &EBO);
 	
 
 	// 1. Bind vertex array object
@@ -125,8 +133,11 @@ int main()
 	// vertexand fragment shader that actually processes this data, so let's start building those.
  	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Push buffer to GPU
 
+	// 3. Copy index array in an elelment buffer for OpenGL to use
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	// 3. Set the vertex attributes pointers
+	// 4. Set the vertex attributes pointers
 
 	// Tell OpenGL how our vertex buffer data is formatted
 	// Paramater 1:	vertex attribute to configure. In this case we specified the location of the position vertex attribute
@@ -161,7 +172,9 @@ int main()
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-
+#ifdef DISPLAY_WIREFRAME
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#endif
 	while (!glfwWindowShouldClose(window))
 	{
 		ProcessInput(window);
@@ -172,8 +185,12 @@ int main()
 
 		glUseProgram(shaderProgram);
 		glBindVertexArray(VAO);
-		// Numbers represnent start index and how many verticies
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		// Numbers represent start index and how many verticies
+		// glDrawArrays(GL_TRIANGLES, 0, 3);
+		
+		// Now with an EBO, we use glDrawElements()
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		// glBindVertexArray(0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
