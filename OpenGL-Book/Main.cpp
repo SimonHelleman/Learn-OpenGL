@@ -43,6 +43,7 @@ void ProcessInput(GLFWwindow* window)
 
 int main()
 {
+	std::cout << "Hello Tirangle" << std::endl;
 	if (!glfwInit())
 	{
 		std::cerr << "glfwInit() failed" << std::endl;
