@@ -1,10 +1,11 @@
-#include "ShaderProgram.h"
 #include <cmath>
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-//#define FULLSCREEN
-//#define DISPLAY_WIREFRAME
+#include "ShaderProgram.h"
+
+// #define FULLSCREEN
+// #define DISPLAY_WIREFRAME
 
 #ifdef FULLSCREEN
 static int windowWidth = 2560;
@@ -13,29 +14,6 @@ static int windowHeight = 1440;
 static int windowWidth = 800;
 static int windowHeight = 600;
 #endif
-
-/*
-static const char* vertexShaderSource =
-	"#version 330 core\n"
-	"layout (location = 0) in vec3 aPos;\n"
-	"layout (location = 1) in vec3 aColor;\n"
-	"out vec3 ourColor;\n"
-	"void main()\n"
-	"{\n"
-	"   gl_Position = vec4(aPos, 1.0);\n"
-	"	ourColor = aColor;\n"
-	"}\0";
-
-static const char* fragmentShaderSource =
-	"#version 330 core\n"
-	"out vec4 FragColor;\n"
-	"in vec3 ourColor;\n"
-	"void main()\n"
-	"{\n"
-	"	FragColor = vec4(ourColor, 1.0);\n"
-	"}\n";
-
-*/
 
 // Called whenever the window is resized -> changes fields and sets viewport
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
@@ -52,15 +30,41 @@ void PrintWindowDimensions()
 
 void ProcessInput(GLFWwindow* window)
 {
+#ifdef DISPLAY_WIREFRAME
+	static bool isWireFrameEnabled = 1;
+#else
+	static bool isWireFrameEnabled = 0;
+#endif
+	static bool isKeyDown = 0;
+
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	}
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	
+	if (!isKeyDown)
 	{
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		{
+			isKeyDown = 1;
+			if (!isWireFrameEnabled)
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				isWireFrameEnabled = !isWireFrameEnabled;
+			}
+			else
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				isWireFrameEnabled = !isWireFrameEnabled;
+			}
+		}
 	}
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE)
+	{
+		isKeyDown = 0;
+	}
+	
 }
 
 int main()
@@ -73,6 +77,7 @@ int main()
 	}
 
 	std::cout << "glfwInit() complete" << std::endl;
+	
 	// Set OpenGL version and set to core mode (modern)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -104,8 +109,6 @@ int main()
 	glViewport(0, 0, windowWidth, windowHeight);
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 
-	// Good colours
-	// 0.22f, 1.0f, 0.78f, 0.04f, 0.38f, 0.93f, 0.97f, 0.13f, 0.52f
 
 	float triangle[] = {
 		0.5f, -0.5f, 0.0f, 0.22f, 1.0f, 0.78f,
@@ -141,32 +144,10 @@ int main()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // Set the offset to 3 floats in since thats where color is
 	glEnableVertexAttribArray(1);
 
-	/*
-	// Create vertex shader
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-	glCompileShader(vertexShader);
+	ShaderProgram shader = ShaderProgram("vertex.vert", "fragment.frag");
+	shader.Use();
 
-	// Create fragment shaders -> basically the same as the vertex
-	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-	glCompileShader(fragmentShader);
-
-	// Create a shader program
-	// When linking the shaders into a program it links the outputs of each shader to the inputs of the next shader.
-	// This is also where you'll get linking errors if your outputs and inputs do not match.
-	unsigned int shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	// Delete the shaders since we don't need them anymore
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	*/
-
-	ShaderProgram shader("vertex.vert", "fragment.frag");
+	shader.SetFloat("offset", 0.0f);
 
 #ifdef DISPLAY_WIREFRAME
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

@@ -65,7 +65,7 @@ ShaderProgram::ShaderProgram(const char* vertexPath, const char* fragmentPath)
 	glDeleteShader(fragmentShader);
 }
 
-void ShaderProgram::CheckErrors(unsigned int shader, const std::string& type)
+void ShaderProgram::CheckErrors(unsigned int shader, const char* type) const
 {
 	constexpr size_t bufferSize = 1024;
 	int success;
